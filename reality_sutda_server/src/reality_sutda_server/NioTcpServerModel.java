@@ -1,11 +1,11 @@
 package reality_sutda_server;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -13,16 +13,16 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public abstract class NioServerModel {
+public abstract class NioTcpServerModel {
 	public final int BUFFER_ALLOCATE_SIZE = 1024;
 	
 	private Selector selector = null;
 	private ServerSocketChannel serverSocketChannel = null;
 	private ServerSocket serverSocket = null;
 	
-	HashMap<SocketChannel, BufferedInputStream> map = null;
+	HashMap<SocketChannel, ByteBuffer> map = null;
 	
-	protected NioServerModel(int port) {
+	protected NioTcpServerModel(int port) {
 		initServer(port);
 	}
 	
@@ -41,13 +41,13 @@ public abstract class NioServerModel {
 			
 			serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 			
-			map = new HashMap<SocketChannel, BufferedInputStream>();
+			map = new HashMap<SocketChannel, ByteBuffer>();
 		} catch(IOException ex) {
 			// error handling
 		}
 	}
 	
-	protected void startServer() {
+	protected void runServer() {
 		try {
 			while(true) {
 				if(selector.select() == 0)
@@ -66,6 +66,13 @@ public abstract class NioServerModel {
 			}
 		} catch(Exception ex) {
 			// error handling
+			System.out.println("[Log] Server terminated! " + ex.getMessage());
+			try {
+				serverSocketChannel.close();
+			} catch (IOException ex2) {
+				// error handling
+			}
+			ex.printStackTrace();
 		}
 	}
 	
@@ -79,7 +86,7 @@ public abstract class NioServerModel {
 			sc.configureBlocking(false);
 			sc.register(selector, SelectionKey.OP_READ);
 			
-			map.put(sc, new BufferedInputStream(sc.socket().getInputStream()));
+			map.put(sc, ByteBuffer.allocate(BUFFER_ALLOCATE_SIZE));
 			
 			_accept(sc);
 			
@@ -89,64 +96,50 @@ public abstract class NioServerModel {
 	}
 	
 	private void read(SelectionKey skey) {
-		SocketChannel sc = (SocketChannel) skey.channel();
-		//ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_ALLOCATE_SIZE);
-		byte[] buffer = new byte[BUFFER_ALLOCATE_SIZE];
+		SocketChannel sc = (SocketChannel) skey.channel();getClass();
+		
 		try {
-			BufferedInputStream bis = map.get(sc);
-			bis.mark(BUFFER_ALLOCATE_SIZE);
-			
-			int readSz = bis.read(buffer);
-			
-			/*
-			int readSz = bis.read(buffer);
-			System.out.println(buffer);
+			ByteBuffer buffer = map.get(sc);
+			if(sc.read(buffer) <= 0) {
+				throw new ClosedChannelException();
+			}
 			buffer.flip();
-			System.out.println(buffer);
-			if(readSz < 0) {
-				System.out.println("[Log] disconnected!");
-				buffer.clear(); return;
-			} else if(readSz < 4) {
-				System.out.println("[Log] hehehe");
-				bis.reset();
-				buffer.clear(); return;
-			} else if(readSz < buffer.getInt(0)) {
-				System.out.println("[Log] yayaya");
-				sc.socket().getInputStream().reset();
-				buffer.clear(); return;
-			} else if(readSz > buffer.getInt(0)) {
-				System.out.println("[Log] haters...");
-				buffer.limit(buffer.getInt(0));
-				System.out.println(buffer);
-				//sc.socket().getInputStream().reset();
-				System.out.println(buffer);
-				//sc.socket().getInputStream().skip(buffer.getInt(0));
+			while(true) {
+				buffer.mark();
+				int x;
+				try {
+					x = buffer.getInt();
+					if(buffer.remaining() < x)
+						throw new BufferUnderflowException();
+					else if(x < 0)
+						throw new IOException("Invalid packet");
+				} catch(BufferUnderflowException ex) {
+					buffer.reset();
+					break;
+				}
+
+				byte[] b = new byte[x];
+				buffer.get(b, 0, x);
+				_read(sc, b);
 			}
-			*/
-			/*
-			//buffer.mark();
-			int x = buffer.getInt(0);
-			if(readSz < x) {
-				System.out.println("[Log] yayaya");
-				//buffer.reset();
-				sc.socket().getInputStream().reset();
-				buffer.clear(); return;
+			buffer.compact();
+		} catch(ClosedChannelException ex) {
+			try {
+				System.out.println("[Log] Disconnected!");
+				sc.close();
+			} catch(IOException ex2) {
+				// error handling
 			}
-			*/
-			
-			_read(sc, buffer);
-			
 		} catch(IOException ex) {
 			try {
+				System.out.println("[Log] I/O Exception! " + ex.getMessage());
 				sc.close();
 			} catch(IOException ex2) {
 				// error handling
 			}
 		}
-		
-		buffer.clear();
 	}
 	
 	protected abstract void _accept(SocketChannel sc);
-	protected abstract void _read(SocketChannel sc, ByteBuffer buffer);
+	protected abstract void _read(SocketChannel sc, byte[] buffer);
 }
