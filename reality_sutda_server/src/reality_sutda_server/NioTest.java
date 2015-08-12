@@ -9,7 +9,7 @@ import java.net.UnknownHostException;
 public class NioTest {
 	public static void main(String[] args) throws InterruptedException {
 		try {
-			Socket sock = new Socket("192.168.0.138", 8080);
+			Socket sock = new Socket("210.118.74.137", 8080);
 			
 			BufferedOutputStream bos = new BufferedOutputStream(sock.getOutputStream());        	        	
         	byte[] b = new byte[1024];

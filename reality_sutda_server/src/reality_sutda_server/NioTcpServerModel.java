@@ -93,6 +93,8 @@ public abstract class NioTcpServerModel {
 			
 		} catch(Exception ex) {
 			// error handling
+			System.out.println("[Log] accept() error! ");
+			ex.printStackTrace();
 		}
 	}
 	

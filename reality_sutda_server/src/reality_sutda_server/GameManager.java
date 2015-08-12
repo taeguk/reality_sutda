@@ -11,10 +11,12 @@ public class GameManager {
 	private HashMap<String, Integer> roomIdTable = new HashMap<String, Integer>();		// roomToken , roomId
 	
 	public void addUser(User user) {
+		System.out.println("[Log] GameManager.addUser() start");
 		users.add(user);
 	}
 	
 	public void makeRoom(User user, int playerNum) {
+		System.out.println("[Log] GameManager.makeRoom() start");
 		int status;
 		
 		if(playerNum < 2 || playerNum > 10) {
@@ -28,6 +30,7 @@ public class GameManager {
 	}
 
 	public void enterRoom(User user, String roomToken) {
+		System.out.println("[Log] GameManager.enterRoom() start");
 		int status;
 		Integer roomId = roomIdTable.get(roomToken);
 		if(roomId == null) {
@@ -56,6 +59,7 @@ public class GameManager {
 	}
 
 	public void exitRoom(User user) {
+		System.out.println("[Log] GameManager.exitRoom() start");
 		Room room = user.getRoom();
 		if(room.exitRoom(user))
 			rooms.remove(room);
@@ -64,21 +68,25 @@ public class GameManager {
 	}
 
 	public void betting(User user, int type) {
+		System.out.println("[Log] GameManager.betting() start");
 		Room room = user.getRoom();
 		room.betting(user, type);
 	 }
 	
 	public void dealing(User user) {
+		System.out.println("[Log] GameManager.dealing() start");
 		Room room = user.getRoom();
 		room.dealing();
 	}
 
 	public void checkOpinion(User user, int answer) {
+		System.out.println("[Log] GameManager.checkOpinion() start");
 		Room room = user.getRoom();
 		room.checkOpinion(user, answer);
 	}
 
 	public void delUser(User user) {
+		System.out.println("[Log] GameManager.delUser() start");
 		Room room = user.getRoom();
 		if(room != null) {
 			if(room.exitRoom(user))
@@ -88,6 +96,7 @@ public class GameManager {
 	}
 
 	public void replaySelection(User user, int selection) {
+		System.out.println("[Log] GameManager.replaySelection() start");
 		Room room = user.getRoom();
 		room.replaySelection(user, selection);
 	}

@@ -1,6 +1,7 @@
 package reality_sutda_server;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
 import org.json.simple.JSONArray;
@@ -19,8 +20,8 @@ public class ClientHandler {
 	public User getUser() { return me; }
 	
 	public void processPacket(JSONObject data) {
-		System.out.println("[Log] ClientHandler.processPacket() start");
-		int packetFlag = (int) data.get("packetFlag");
+		System.out.println("[Log] ClientHandler.processPacket() start (JSON : " + data.toJSONString() + ")");
+		int packetFlag = (int)(long) data.get("packetFlag");
 		
 		switch(packetFlag) {
 		case Protocol.MAKE_ROOM_REQ:
@@ -51,65 +52,82 @@ public class ClientHandler {
 	}
 	
 	private void processMakeRoomRequest(JSONObject data) {
-		int playerNum = (int) data.get("playerNum");
+		System.out.println("[Log] ClientHandler.processMakeRoomRequest() start");
+		int playerNum = (int)(long) data.get("playerNum");
 		gameManager.makeRoom(me, playerNum);
 	}
 
 	private void processEnterRoomRequest(JSONObject data) {
-		String roomToken = new String((byte[])data.get("roomToken"));
+		System.out.println("[Log] ClientHandler.processEnterRoomRequest() start");
+		String roomToken = (String) data.get("roomToken");
 		gameManager.enterRoom(me, roomToken);
 	}
 	
 	private void processExitRoom(JSONObject data) {
+		System.out.println("[Log] ClientHandler.processExitRoom() start");
 		gameManager.exitRoom(me);
 	}
 	
 	private void processDealing(JSONObject data) {
+		System.out.println("[Log] ClientHandler.processDealing() start");
 		gameManager.dealing(me);
 	}
 	
 	private void processBetting(JSONObject data) {
-		int type = (int) data.get("type");
+		System.out.println("[Log] ClientHandler.processBetting() start");
+		int type = (int)(long) data.get("type");
 		gameManager.betting(me, type);
 	}
 	
 	private void processCheckOpinion(JSONObject data) {
-		int answer = (int) data.get("answer");
+		System.out.println("[Log] ClientHandler.processCheckOpinion() start");
+		int answer = (int)(long) data.get("answer");
 		gameManager.checkOpinion(me, answer);
 	}
 	
 	private void processReplaySelection(JSONObject data) {
-		int selection = (int) data.get("selection");
+		System.out.println("[Log] ClientHandler.processReplaySelection() start");
+		int selection = (int)(long) data.get("selection");
 		gameManager.replaySelection(me, selection);
 	}
 	
 	private void invalidPacket() {
+		System.out.println("[Log] ClientHandler.invalidPacket() start");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.INVALID_PACKET);
 		server.sendJsonObject(me.getSocketChannel(), jsonObject);
 	}
 	
 	public static void sendMakeRoomResponse(User user, int status) {
+		System.out.println("[Log] ClientHandler.sendMakeRoomResponse() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.MAKE_ROOM_RES);
 		jsonObject.put("status", status);
-		if(status == Protocol.MAKE_ROOM_RESULT_SUCCESS)
-			jsonObject.put("roomToken", user.getRoom().getRoomToken().getBytes(server.getNetworkCharset()));
+		if(status == Protocol.MAKE_ROOM_RESULT_SUCCESS) {
+			jsonObject.put("playerNum", user.getRoom().getRoomSize());
+			jsonObject.put("roomToken", user.getRoom().getRoomToken());
+		}
 		server.sendJsonObject(sc, jsonObject);
 	}
 	
 	public static void sendEnterRoomResponse(User user, int status) {
+		System.out.println("[Log] ClientHandler.sendEnterRoomResponse() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.ENTER_ROOM_RES);
 		jsonObject.put("status", status);
+		if(status == Protocol.ENTER_ROOM_RESULT_SUCCESS) {
+			jsonObject.put("playerNum", user.getRoom().getRoomSize());
+			jsonObject.put("roomToken", user.getRoom().getRoomToken());
+		}
 		server.sendJsonObject(sc, jsonObject);
 	}
 	
 	public static void broadCastGameStart(Room room) {
+		System.out.println("[Log] ClientHandler.broadCastGameStart() start");
 		JSONArray userIds = new JSONArray();
 		User[] users = room.getUsers();
 		for(int i=0; i<room.getUserCnt(); ++i) {
@@ -129,6 +147,7 @@ public class ClientHandler {
 	}
 
 	public static void sendDealingCmd(User user) {
+		System.out.println("[Log] ClientHandler.sendDealingCmd() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
@@ -137,6 +156,7 @@ public class ClientHandler {
 	}
 
 	public static void sendReceiveCard(User user, Card card) {
+		System.out.println("[Log] ClientHandler.sendReceiveCard() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
@@ -146,6 +166,7 @@ public class ClientHandler {
 	}
 
 	public static void sendBettingCmd(User user, boolean isPivot) {
+		System.out.println("[Log] ClientHandler.sendBettingCmd() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
@@ -155,6 +176,7 @@ public class ClientHandler {
 	}
 
 	public static void sendCheckOpinionCmd(User user) {
+		System.out.println("[Log] ClientHandler.sendCheckOpinionCmd() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
@@ -163,6 +185,7 @@ public class ClientHandler {
 	}
 
 	public static void broadCastCheckResult(Room room, boolean isCheckResultOk) {
+		System.out.println("[Log] ClientHandler.broadCastCheckResult() start");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.CHECK_RESULT);
 		jsonObject.put("result", (isCheckResultOk ? Protocol.CHECK_RESULT_OK : Protocol.CHECK_RESULT_NO));
@@ -174,6 +197,7 @@ public class ClientHandler {
 	}
 
 	public static void broadCastUpdateUserCnt(Room room) {
+		System.out.println("[Log] ClientHandler.broadCastUpdateUserCnt() start");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.UPDATE_USER_CNT);
 		jsonObject.put("userCnt", room.getUserCnt());
@@ -185,6 +209,7 @@ public class ClientHandler {
 	}
 
 	public static void sendUpdateUserRole(User user, int userRole) {
+		System.out.println("[Log] ClientHandler.sendUpdateUserRole() start");
 		SocketChannel sc = user.getSocketChannel();
 		
 		JSONObject jsonObject = new JSONObject();
@@ -194,6 +219,7 @@ public class ClientHandler {
 	}
 
 	public static void broadCastUserAction(User user, Room room, int action) {
+		System.out.println("[Log] ClientHandler.broadCastUserAction() start");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.USER_ACTION);
 		jsonObject.put("userId", user.getUserId());
@@ -207,6 +233,7 @@ public class ClientHandler {
 	}
 	
 	public static void broadCastGameResult(Room room, int gameResult, int[] table,  int drawPlayerCnt, int[] drawPlayerIdx) {
+		System.out.println("[Log] ClientHandler.broadCastGameResult() start");
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.GAME_RESULT);
 		jsonObject.put("result", gameResult);
@@ -222,10 +249,12 @@ public class ClientHandler {
 	}
 	
 	public static void disconnect(User user) {
+		System.out.println("[Log] ClientHandler.disconnect() start");
 		server.disconnect(user);
 	}
 	
 	public static void disconnectByClient(User user) {
+		System.out.println("[Log] ClientHandler.disconnectByClient() start");
 		gameManager.delUser(user);
 	}
 

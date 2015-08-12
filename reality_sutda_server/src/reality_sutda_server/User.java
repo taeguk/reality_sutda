@@ -24,6 +24,7 @@ public class User {
 	private int cardCnt;
 	
 	public User(SocketChannel sc) {
+		System.out.println("[Log] User.User() start");
 		++User.userCnt;
 		this.userId = User.nextId++;
 		this.sc = sc;
@@ -33,6 +34,7 @@ public class User {
 	}
 	
 	public void enterRoom(Room room) {
+		System.out.println("[Log] User.enterRoom() start");
 		this.status = WAITING;
 		this.room = room;
 	}
@@ -46,28 +48,34 @@ public class User {
 	public int getCardCnt() { return cardCnt; }
 
 	public void gameStart(boolean isDealer) {
+		System.out.println("[Log] User.gameStart() start");
 		status = (isDealer ? DEALER : NORMAL);
 		cards = new Card[2];
 		cardCnt = 0;
 	}
 	
 	public void setStatus(int status) {
+		System.out.println("[Log] User.setStatus() start");
 		this.status = status;
 	}
 
 	public void receiveCard(Card card) {
+		System.out.println("[Log] User.receiveCard() start");
 		cards[cardCnt++] = card;
 	}
 	
 	public void betting(int type) {
+		System.out.println("[Log] User.betting() start");
 		bettingType = type;
 	}
 
 	public boolean isDead() {
+		System.out.println("[Log] User.isDead() start");
 		return status == DEAD;
 	}
 
 	public void die() {
+		System.out.println("[Log] User.die() start");
 		status = DEAD;
 		bettingType = Protocol.BETTING_DIE;
 	}

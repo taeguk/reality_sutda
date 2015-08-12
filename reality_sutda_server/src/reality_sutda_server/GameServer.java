@@ -1,6 +1,7 @@
 package reality_sutda_server;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
@@ -79,12 +80,13 @@ public class GameServer extends NioTcpServerModel {
 		buffer.put(data, 0, data.length);
 		
 		try {
+			buffer.flip();
 			sc.write(buffer);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("[Log] GameServer.sendJsonObject() end");
+		System.out.println("[Log] GameServer.sendJsonObject() end (" + data.length + ", "+ new String(data) + ")");
 	}
 
 	public void disconnect(User user) {

@@ -45,6 +45,7 @@ public class Room {
 	private int selectionYesCnt;
 	
 	public Room(User maker, int roomSize) {
+		System.out.println("[Log] Room.Room() start");
 		++Room.roomCnt;
 		roomId = Room.nextId++;
 		roomToken = "test";		// will be changed.
@@ -66,6 +67,7 @@ public class Room {
 	public User getWinner() { return users[winner]; }
 
 	public boolean addUser(User user) {
+		System.out.println("[Log] Room.addUser() start");
 		if(status != WAITING || userCnt >= roomSize)
 			return false;
 		
@@ -75,6 +77,7 @@ public class Room {
 	}
 
 	public boolean checkCanGameStart() {
+		System.out.println("[Log] Room.checkCanGameStart() start");
 		if(status == WAITING && userCnt == roomSize)
 			return true;
 		else
@@ -82,6 +85,7 @@ public class Room {
 	}
 
 	public void gameStart() {
+		System.out.println("[Log] Room.gameStart() start");
 		status = PLAYING;
 		for(int i=0; i<userCnt; ++i) {
 			users[i].gameStart(i == 0);
@@ -99,11 +103,12 @@ public class Room {
 		createCards();
 		
 		ClientHandler.broadCastGameStart(this);
-		// 패 돌리기 요청 보내기.
+		// �뙣 �룎由ш린 �슂泥� 蹂대궡湲�.
 		ClientHandler.sendDealingCmd(users[dealer]);
 	}
 
 	public boolean exitRoom(User user) {
+		System.out.println("[Log] Room.exitRoom() start");
 		boolean isEmptyRoom = false;
 		int userIdx = -1;
 		while(users[++userIdx] != user);
@@ -141,6 +146,7 @@ public class Room {
 	}
 	
 	public void replaySelection(User user, int selection) {
+		System.out.println("[Log] Room.replaySelection() start");
 		// validation check will be updated.
 		++selectionCnt;
 		if(selection == Protocol.REPLAY_SELECTION_YES) {
@@ -164,6 +170,7 @@ public class Room {
 	}
 
 	private void finishGame() {
+		System.out.println("[Log] Room.finishGame() start");
 		int[] table = new int[aliveCnt];
 		int[] index = new int[aliveCnt * 2];
 		int cnt = 0;
@@ -230,6 +237,7 @@ public class Room {
 	}
 
 	public void dealing() {
+		System.out.println("[Log] Room.dealing() start");
 		User user = users[(dealIdx = (dealIdx + 1) % userCnt)];
 		Card card = cards[dealCnt++];
 		user.receiveCard(card);
@@ -244,12 +252,14 @@ public class Room {
 	}
 
 	private void startBetting() {
+		System.out.println("[Log] Room.startBetting() start");
 		pivot = dealer;
 		turn = 0;
 		commandPivotBetting();
 	}
 	
 	public void commandPivotBetting() {
+		System.out.println("[Log] Room.commandPivotBetting() start");
 		ClientHandler.sendBettingCmd(users[pivot], true);
 		do {
 			pivot = (pivot + 1) % userCnt;
@@ -261,6 +271,7 @@ public class Room {
 	}
 
 	public void betting(User user, int type) {
+		System.out.println("[Log] Room.betting() start");
 		// type validation check will be updated.
 		// duplicate betting check will be updated.
 		
@@ -291,6 +302,7 @@ public class Room {
 	}
 
 	private void startWaitCheckOpinion() {
+		System.out.println("[Log] Room.startWaitCheckOpinion() start");
 		waitCheckOpinion = true;
 		opinionCnt = 1;
 		opinionYesCnt = 1;
@@ -298,6 +310,7 @@ public class Room {
 	}
 
 	private void broadCastCheckOpinionCmd() {
+		System.out.println("[Log] Room.broadCastCheckOpinionCmd() start");
 		for(int i=0; i<userCnt; ++i) {
 			if(i == pivot || users[i].isDead()) continue;
 			ClientHandler.sendCheckOpinionCmd(users[i]);
@@ -305,6 +318,7 @@ public class Room {
 	}
 
 	private void broadCastCommandNormalBetting() {
+		System.out.println("[Log] Room.broadCastCommandNormalBetting() start");
 		for(int i=0; i<userCnt; ++i) {
 			if(i == pivot || users[i].isDead()) continue;
 			ClientHandler.sendBettingCmd(users[i], false);
@@ -319,6 +333,7 @@ public class Room {
 	}
 
 	public void checkOpinion(User user, int answer) {
+		System.out.println("[Log] Room.checkOpinion() start");
 		// update user to opinion yes will be updated.
 		// validation check will be updated.
 		
@@ -340,6 +355,7 @@ public class Room {
 	}
 	
 	private void createCards() {
+		System.out.println("[Log] Room.createCards() start");
 		cards = new Card[Card.CARDNUM];
 		
 		ArrayList<Integer> cardIds = new ArrayList<Integer>();
