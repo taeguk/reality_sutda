@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public abstract class NioTcpServerModel {
-	public final int BUFFER_ALLOCATE_SIZE = 1024;
+	public final int BUFFER_ALLOCATE_SIZE = 256;
 	
 	private Selector selector = null;
 	private ServerSocketChannel serverSocketChannel = null;
@@ -126,14 +126,14 @@ public abstract class NioTcpServerModel {
 		} catch(ClosedChannelException ex) {
 			try {
 				System.out.println("[Log] Disconnected!");
-				sc.close();
+				_close(sc);
 			} catch(IOException ex2) {
 				// error handling
 			}
 		} catch(IOException ex) {
 			try {
 				System.out.println("[Log] I/O Exception! " + ex.getMessage());
-				sc.close();
+				_close(sc);
 			} catch(IOException ex2) {
 				// error handling
 			}
@@ -142,4 +142,5 @@ public abstract class NioTcpServerModel {
 	
 	protected abstract void _accept(SocketChannel sc);
 	protected abstract void _read(SocketChannel sc, byte[] buffer);
+	protected abstract void _close(SocketChannel sc) throws IOException;
 }

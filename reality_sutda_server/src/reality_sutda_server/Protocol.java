@@ -11,9 +11,9 @@ public class Protocol {
 	public static final int DEALING_CMD = 7;
 	public static final int DEALING = 8;
 	public static final int RECEIVE_CARD = 9;
-	public static final int BATTING_CMD = 10;
-	public static final int BATTING = 11;
-	public static final int UPDATE_USER_STATUS = 12;
+	public static final int BETTING_CMD = 10;
+	public static final int BETTING = 11;
+	public static final int USER_ACTION = 12;				// changed
 	public static final int CHECK_OPINION_CMD = 13;
 	public static final int CHECK_OPINION = 14;
 	public static final int CHECK_RESULT = 15;
@@ -31,4 +31,29 @@ public class Protocol {
 	public static final int ENTER_ROOM_RESULT_INVALID_ROOMTOKEN = 0;
 	public static final int ENTER_ROOM_RESULT_ROOM_PLAYING = 1;
 	public static final int ENTER_ROOM_RESULT_SUCCESS = 2;
+	
+	public static final int BETTING_MODE_PIVOT = 0;
+	public static final int BETTING_MODE_NORMAL = 1;
+	
+	public static final int BETTING_DDOUBLE = 0;
+	public static final int BETTING_HALF = 1;
+	public static final int BETTING_NORMAL = 2;
+	public static final int BETTING_CHECK = 3;
+	public static final int BETTING_CALL = 4;
+	public static final int BETTING_DIE = 5;
+	
+	public static final int CHECK_OPINION_YES = 0;
+	public static final int CHECK_OPINION_NO = 1;
+	
+	public static final int CHECK_RESULT_OK = 0;
+	public static final int CHECK_RESULT_NO = 1;
+
+	public static final int USER_ACTION_BETTING = 0;	// exclude die.
+	public static final int USER_ACTION_DIE = 1;
+	public static final int USER_ACTION_EXIT_ROOM = 2;
+	
+	public static final int USER_ROLE_NORMAL = 0;
+	public static final int USER_ROLE_DEALER = 1;
+	
+	// more added.
 }

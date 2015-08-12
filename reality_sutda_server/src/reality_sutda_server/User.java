@@ -9,12 +9,6 @@ public class User {
 	public static final int DEALER = 3;
 	public static final int DEAD = 4;
 	
-	public static final int DDOUBLE = 10;
-	public static final int HALF = 11;
-	public static final int BASIC = 12;
-	public static final int CALL = 13;
-	public static final int DIE = 14;
-	
 	private static int nextId = 0;
 	private static int userCnt = 0;
 	
@@ -22,7 +16,7 @@ public class User {
 	
 	private int userId;
 	private int status;		// empty , waiting , normal , dealer , dead
-	private int batting;	// ddouble, half, basic, call, die
+	private int bettingType;	// notbatting, ddouble, half, normal, check, call, die
 	
 	private Room room;
 	
@@ -46,7 +40,7 @@ public class User {
 	public int getUserId() { return userId; }
 	public SocketChannel getSocketChannel() { return sc; }
 	public int getStatus() { return status; }
-	public int getBatting() { return batting; }
+	public int getBettingType() { return bettingType; }
 	public Room getRoom() { return room; }
 	public Card[] getCards() { return cards; }
 	public int getCardCnt() { return cardCnt; }
@@ -56,8 +50,25 @@ public class User {
 		cards = new Card[2];
 		cardCnt = 0;
 	}
+	
+	public void setStatus(int status) {
+		this.status = status;
+	}
 
 	public void receiveCard(Card card) {
 		cards[cardCnt++] = card;
+	}
+	
+	public void betting(int type) {
+		bettingType = type;
+	}
+
+	public boolean isDead() {
+		return status == DEAD;
+	}
+
+	public void die() {
+		status = DEAD;
+		bettingType = Protocol.BETTING_DIE;
 	}
 }

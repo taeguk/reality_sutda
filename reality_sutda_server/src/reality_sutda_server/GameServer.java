@@ -53,6 +53,15 @@ public class GameServer extends NioTcpServerModel {
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	protected void _close(SocketChannel sc) throws IOException {
+		User user = map.get(sc).getUser();
+		if(map.remove(sc) != null) {
+			ClientHandler.disconnectByClient(user);
+			sc.close();
+		}
+	}
 	
 	public void sendJsonObject(SocketChannel sc, JSONObject jsonObject) {
 		byte[] data = jsonObject.toJSONString().getBytes(networkCharset);
@@ -68,6 +77,19 @@ public class GameServer extends NioTcpServerModel {
 			e.printStackTrace();
 		}
 	}
+
+	public void disconnect(User user) {
+		SocketChannel sc = user.getSocketChannel();
+		if(map.remove(sc) != null) {
+			try {
+				sc.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	
 	private void test() {
 		System.out.println("[Log] connected!");
