@@ -66,7 +66,7 @@ public class GameManager {
 	public void betting(User user, int type) {
 		Room room = user.getRoom();
 		room.betting(user, type);
-	}
+	 }
 	
 	public void dealing(User user) {
 		Room room = user.getRoom();
@@ -85,5 +85,10 @@ public class GameManager {
 				rooms.remove(room);
 		}
 		users.remove(user);
+	}
+
+	public void replaySelection(User user, int selection) {
+		Room room = user.getRoom();
+		room.replaySelection(user, selection);
 	}
 }

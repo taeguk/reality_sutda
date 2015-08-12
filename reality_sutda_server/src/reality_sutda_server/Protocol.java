@@ -19,7 +19,7 @@ public class Protocol {
 	public static final int CHECK_RESULT = 15;
 	public static final int GAME_RESULT = 16;
 	public static final int ACTION_TIME_OUT = 17;
-	public static final int REPLAY = 18;
+	public static final int REPLAY_SELECTION = 18;		// changed
 	public static final int INVALID_PACKET = 400;
 	public static final int ENTER_ROOM_REQ = 100;
 	public static final int ENTER_ROOM_RES = 101;
@@ -54,6 +54,15 @@ public class Protocol {
 	
 	public static final int USER_ROLE_NORMAL = 0;
 	public static final int USER_ROLE_DEALER = 1;
+	
+	public static final int GAME_RESULT_WHO_WINS = 0;
+	public static final int GAME_RESULT_DRAW = 1;
+	public static final int GAME_RESULT_REMATCH = 2;
+	public static final int GAME_IS_LOSER = 0;
+	public static final int GAME_IS_DRAW_PLAYER = 1;
+	
+	public static final int REPLAY_SELECTION_NO = 0;
+	public static final int REPLAY_SELECTION_YES = 1;
 	
 	// more added.
 }

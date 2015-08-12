@@ -19,6 +19,7 @@ public class ClientHandler {
 	public User getUser() { return me; }
 	
 	public void processPacket(JSONObject data) {
+		System.out.println("[Log] ClientHandler.processPacket() start");
 		int packetFlag = (int) data.get("packetFlag");
 		
 		switch(packetFlag) {
@@ -40,12 +41,13 @@ public class ClientHandler {
 		case Protocol.CHECK_OPINION:
 			processCheckOpinion(data);
 			break;
-		case Protocol.REPLAY:
-			processReplay(data);
+		case Protocol.REPLAY_SELECTION:
+			processReplaySelection(data);
 			break;
 		default:
 			invalidPacket();
 		}
+		System.out.println("[Log] ClientHandler.processPacket() end");
 	}
 	
 	private void processMakeRoomRequest(JSONObject data) {
@@ -76,8 +78,9 @@ public class ClientHandler {
 		gameManager.checkOpinion(me, answer);
 	}
 	
-	private void processReplay(JSONObject data) {
-		
+	private void processReplaySelection(JSONObject data) {
+		int selection = (int) data.get("selection");
+		gameManager.replaySelection(me, selection);
 	}
 	
 	private void invalidPacket() {
@@ -203,6 +206,21 @@ public class ClientHandler {
 		}
 	}
 	
+	public static void broadCastGameResult(Room room, int gameResult, int[] table,  int drawPlayerCnt, int[] drawPlayerIdx) {
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("packetFlag", Protocol.GAME_RESULT);
+		jsonObject.put("result", gameResult);
+		if(gameResult == Protocol.GAME_RESULT_WHO_WINS) {
+			jsonObject.put("winner", room.getWinner().getUserId());
+		} else if(gameResult == Protocol.GAME_RESULT_DRAW) {
+			JSONArray drawPlayerIds = new JSONArray();
+			for(int i=0; i<drawPlayerCnt; ++i)
+				drawPlayerIds.add(table[drawPlayerIdx[i]]);
+			jsonObject.put("drawPlayerCnt", drawPlayerCnt);
+			jsonObject.put("drawPlayerIds", drawPlayerIds);
+		}
+	}
+	
 	public static void disconnect(User user) {
 		server.disconnect(user);
 	}
@@ -210,4 +228,6 @@ public class ClientHandler {
 	public static void disconnectByClient(User user) {
 		gameManager.delUser(user);
 	}
+
+	
 }

@@ -2,6 +2,7 @@ package reality_sutda_server;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 
 public class Room {
 	private static int WAITING = 0;
@@ -29,11 +30,19 @@ public class Room {
 	private int opinionCnt;
 	private int opinionYesCnt;
 	
+	private int winner;
+	
 	private Card[] cards;
 	
 	private int dealIdx;
 	private int dealCnt;
 	private boolean dealFinished;
+	
+	private boolean waitReplaySelection;
+	private boolean[] selectionTable;
+	private HashMap<User, Integer> userMap;
+	private int selectionCnt;
+	private int selectionYesCnt;
 	
 	public Room(User maker, int roomSize) {
 		++Room.roomCnt;
@@ -54,6 +63,7 @@ public class Room {
 	public User getDealer() { return users[dealer]; }
 	public User getPivot() { return users[pivot]; }
 	public String getRoomToken() { return roomToken; }
+	public User getWinner() { return users[winner]; }
 
 	public boolean addUser(User user) {
 		if(status != WAITING || userCnt >= roomSize)
@@ -74,7 +84,7 @@ public class Room {
 	public void gameStart() {
 		status = PLAYING;
 		for(int i=0; i<userCnt; ++i) {
-			users[i].gameStart(i == dealer);
+			users[i].gameStart(i == 0);
 		}
 		
 		pivot = dealer = 0;
@@ -84,6 +94,7 @@ public class Room {
 		aliveCnt = userCnt;
 		
 		waitCheckOpinion = false;
+		waitReplaySelection = false;
 		
 		createCards();
 		
@@ -117,7 +128,7 @@ public class Room {
 			ClientHandler.broadCastUserAction(user, this, Protocol.USER_ACTION_EXIT_ROOM);
 			
 			if(userCnt <= 1) {
-				// game finished!
+				finishGame();
 				
 				isEmptyRoom = true;
 				
@@ -127,6 +138,95 @@ public class Room {
 		ClientHandler.disconnect(user);
 		
 		return isEmptyRoom;
+	}
+	
+	public void replaySelection(User user, int selection) {
+		// validation check will be updated.
+		++selectionCnt;
+		if(selection == Protocol.REPLAY_SELECTION_YES) {
+			selectionTable[userMap.get(user).intValue()] = true;
+			++selectionYesCnt;
+		}
+		if(selectionCnt >= userCnt) {
+			User[] newUsers = new User[selectionYesCnt];
+			int idx = 0;
+			for(int i=0; i<userCnt; ++i) {
+				if(selectionTable[i] == true) {
+					newUsers[idx++] = users[i];
+				} else {
+					ClientHandler.disconnect(users[i]);
+				}
+			}
+			users = newUsers;
+			userCnt = selectionYesCnt;
+			gameStart();
+		}
+	}
+
+	private void finishGame() {
+		int[] table = new int[aliveCnt];
+		int[] index = new int[aliveCnt * 2];
+		int cnt = 0;
+		for(int i=0; i<userCnt; ++i) {
+			if(users[i].isDead()) continue;
+			table[cnt/2] = i;
+			index[cnt++] = users[i].getCards()[0].getCardId();
+			index[cnt++] = users[i].getCards()[1].getCardId();
+		}
+		GameResultJudge grj = new GameResultJudge(aliveCnt, index);
+		grj.judge();
+		int gameResult = grj.getGameResult();
+		
+		if(gameResult == GameResultJudge.WHOWINS) {
+			winner = table[grj.getWinnerIdx()];
+			ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_WHO_WINS, null,0,null);
+			// replaying processing
+			waitReplaySelection = true;
+			selectionTable = new boolean[userCnt];
+			userMap = new HashMap<User, Integer>();
+			for(int i=0; i<userCnt; ++i) {
+				userMap.put(users[i], i);
+			}
+			selectionYesCnt = selectionCnt = 0;
+		} else if(gameResult == GameResultJudge.DRAW) {
+			ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_DRAW, table, grj.getDrawPlayerNum(), grj.getDrawPlayerIdx());
+			
+			status = PLAYING;
+			for(int i=0; i<userCnt; ++i) {
+				users[i].gameStart(i == 0);
+			}
+			
+			pivot = dealer = 0;
+			dealIdx = (dealer+1) % userCnt;
+			dealCnt = 0;
+			dealFinished = false;
+			aliveCnt = userCnt;
+			
+			waitCheckOpinion = false;
+			
+			createCards();
+			
+			int[] drawPlayerIdx = grj.getDrawPlayerIdx();
+			boolean isDrawPlayer[] = new boolean[userCnt];
+			
+			for(int i=0; i<grj.getDrawPlayerNum(); ++i) {
+				isDrawPlayer[table[drawPlayerIdx[i]]] = true;
+			}
+			
+			for(int i=0; i<userCnt; ++i) {
+				if(isDrawPlayer[i]) continue;
+				users[i].die();
+			}
+			
+			do {
+				dealer = (dealer + 1) % userCnt;
+			} while(users[dealer].isDead());
+			
+			ClientHandler.sendDealingCmd(users[dealer]);
+		} else {	// rematch
+			ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_REMATCH, null,0,null);
+			gameStart();
+		}
 	}
 
 	public void dealing() {

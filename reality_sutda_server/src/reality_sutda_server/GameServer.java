@@ -22,6 +22,7 @@ public class GameServer extends NioTcpServerModel {
 
 	private GameServer(int port) {
 		super(port);
+		System.out.println("[Log] GameServer runs!");
 	}
 	
 	public static GameServer getInstance() {
@@ -37,11 +38,14 @@ public class GameServer extends NioTcpServerModel {
 
 	@Override
 	protected void _accept(SocketChannel sc) {
+		System.out.println("[Log] GameServer._accept() start");
 		map.put(sc, new ClientHandler(sc));
+		System.out.println("[Log] GameServer._accept() end");
 	}
 
 	@Override
 	protected void _read(SocketChannel sc, byte[] buffer) {
+		System.out.println("[Log] GameServer._read() start");
 		try {
 			ClientHandler handler = map.get(sc);
 			JSONObject data = (JSONObject) jsonParser.parse(new String(buffer));
@@ -52,18 +56,22 @@ public class GameServer extends NioTcpServerModel {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("[Log] GameServer._read() end");
 	}
 
 	@Override
 	protected void _close(SocketChannel sc) throws IOException {
+		System.out.println("[Log] GameServer._close() start");
 		User user = map.get(sc).getUser();
 		if(map.remove(sc) != null) {
 			ClientHandler.disconnectByClient(user);
 			sc.close();
 		}
+		System.out.println("[Log] GameServer._close() end");
 	}
 	
 	public void sendJsonObject(SocketChannel sc, JSONObject jsonObject) {
+		System.out.println("[Log] GameServer.sendJsonObject() start");
 		byte[] data = jsonObject.toJSONString().getBytes(networkCharset);
 		ByteBuffer buffer = ByteBuffer.allocate(4 + data.length);
 		
@@ -76,9 +84,11 @@ public class GameServer extends NioTcpServerModel {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("[Log] GameServer.sendJsonObject() end");
 	}
 
 	public void disconnect(User user) {
+		System.out.println("[Log] GameServer.disconnect() start");
 		SocketChannel sc = user.getSocketChannel();
 		if(map.remove(sc) != null) {
 			try {
@@ -88,6 +98,7 @@ public class GameServer extends NioTcpServerModel {
 				e.printStackTrace();
 			}
 		}
+		System.out.println("[Log] GameServer.disconnect() end");
 	}
 	
 	
