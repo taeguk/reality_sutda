@@ -12,7 +12,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class GameServer extends NioTcpServerModel {
-	private static final int PORT = 7878;
+	private static final int PORT = 8080;
 	private static GameServer gameServer = new GameServer(PORT);
 	
 	private GameManager gameManager = new GameManager();

@@ -1,6 +1,7 @@
 package reality_sutda_server;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.BufferUnderflowException;
@@ -36,7 +37,7 @@ public abstract class NioTcpServerModel {
 			
 			serverSocket = serverSocketChannel.socket();
 			
-			InetSocketAddress isa = new InetSocketAddress("localhost", port);
+			InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(), port);
 			serverSocket.bind(isa);
 			
 			serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
