@@ -133,7 +133,7 @@ public class ClientHandler {
 		for(int i=0; i<room.getUserCnt(); ++i) {
 			userIds.add(users[i].getUserId());
 		}
-		
+
 		for(int i=0; i<room.getUserCnt(); ++i) {
 			SocketChannel sc = users[i].getSocketChannel();
 			JSONObject jsonObject = new JSONObject();
@@ -161,7 +161,7 @@ public class ClientHandler {
 		
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.RECEIVE_CARD);
-		jsonObject.put("cardId", card.getCardId());
+		jsonObject.put("cardId", GameResultJudge.card[card.getCardId()]);
 		server.sendJsonObject(sc, jsonObject);
 	}
 
@@ -214,7 +214,7 @@ public class ClientHandler {
 		
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("packetFlag", Protocol.UPDATE_USER_ROLE);
-		jsonObject.put("result", userRole);
+		jsonObject.put("role", userRole);
 		server.sendJsonObject(sc, jsonObject);
 	}
 
@@ -246,6 +246,20 @@ public class ClientHandler {
 			jsonObject.put("drawPlayerCnt", drawPlayerCnt);
 			jsonObject.put("drawPlayerIds", drawPlayerIds);
 		}
+		User[] users = room.getUsers();
+		for(int i=0; i<room.getUserCnt(); ++i) {
+			SocketChannel sc = users[i].getSocketChannel();
+			server.sendJsonObject(sc, jsonObject);
+		}
+	}
+
+	public static void sendQuitRoom(User user) {
+		System.out.println("[Log] ClientHandler.sendQuitRoom() start");
+		SocketChannel sc = user.getSocketChannel();
+		
+		JSONObject jsonObject = new JSONObject();
+		jsonObject.put("packetFlag", Protocol.QUIT_ROOM_CMD);
+		server.sendJsonObject(sc, jsonObject);
 	}
 	
 	public static void disconnect(User user) {
@@ -255,8 +269,8 @@ public class ClientHandler {
 	
 	public static void disconnectByClient(User user) {
 		System.out.println("[Log] ClientHandler.disconnectByClient() start");
+		gameManager.exitRoom(user);
 		gameManager.delUser(user);
 	}
 
-	
 }

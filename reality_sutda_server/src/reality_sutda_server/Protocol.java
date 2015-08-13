@@ -24,6 +24,8 @@ public class Protocol {
 	public static final int ENTER_ROOM_REQ = 100;
 	public static final int ENTER_ROOM_RES = 101;
 	
+	public static final int QUIT_ROOM_CMD = 123;
+	
 	public static final int MAKE_ROOM_RESULT_INVALID_PLAYERNUM = 0;
 	public static final int MAKE_ROOM_RESULT_SERVER_BUSY = 1;
 	public static final int MAKE_ROOM_RESULT_SUCCESS = 2;

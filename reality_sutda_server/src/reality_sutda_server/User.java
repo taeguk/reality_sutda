@@ -9,6 +9,8 @@ public class User {
 	public static final int DEALER = 3;
 	public static final int DEAD = 4;
 	
+	public static final int NOTBETTING = 1000;
+	
 	private static int nextId = 0;
 	private static int userCnt = 0;
 	
@@ -16,7 +18,7 @@ public class User {
 	
 	private int userId;
 	private int status;		// empty , waiting , normal , dealer , dead
-	private int bettingType;	// notbatting, ddouble, half, normal, check, call, die
+	private int bettingType;	// notbetting, ddouble, half, normal, check, call, die
 	
 	private Room room;
 	
@@ -57,6 +59,11 @@ public class User {
 	public void setStatus(int status) {
 		System.out.println("[Log] User.setStatus() start");
 		this.status = status;
+	}
+	
+	public void setBettingType(int bettingType) {
+		System.out.println("[Log] User.setBettingType() start");
+		this.bettingType = bettingType;
 	}
 
 	public void receiveCard(Card card) {

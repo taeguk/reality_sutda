@@ -9,6 +9,7 @@ public class GameManager {
 	private HashMap<Integer, Room> rooms = new HashMap<Integer, Room>();	// roomId
 	
 	private HashMap<String, Integer> roomIdTable = new HashMap<String, Integer>();		// roomToken , roomId
+	private static RandomString randomString = new RandomString(6);
 	
 	public void addUser(User user) {
 		System.out.println("[Log] GameManager.addUser() start");
@@ -22,8 +23,14 @@ public class GameManager {
 		if(playerNum < 2 || playerNum > 10) {
 			status = Protocol.MAKE_ROOM_RESULT_INVALID_PLAYERNUM;
 		} else {
-			Room room = new Room(user, playerNum); 
+			String rs;
+			do {
+				rs = randomString.nextString();
+			} while(roomIdTable.containsKey(rs));
+			Room room = new Room(user, playerNum, rs); 
 			user.enterRoom(room);
+			rooms.put(room.getRoomId(), room);
+			roomIdTable.put(room.getRoomToken(), room.getRoomId());
 			status = Protocol.MAKE_ROOM_RESULT_SUCCESS;
 		}
 		ClientHandler.sendMakeRoomResponse(user, status);
@@ -39,10 +46,11 @@ public class GameManager {
 			Room room = rooms.get(roomId);
 			if(room.addUser(user) == false)
 				status = Protocol.ENTER_ROOM_RESULT_ROOM_PLAYING;
-			else
+			else {
 				status = Protocol.ENTER_ROOM_RESULT_SUCCESS;
+				user.enterRoom(room);
+			}
 		}
-		
 		ClientHandler.sendEnterRoomResponse(user, status);
 		
 		if(status == Protocol.ENTER_ROOM_RESULT_SUCCESS) {
@@ -61,17 +69,20 @@ public class GameManager {
 	public void exitRoom(User user) {
 		System.out.println("[Log] GameManager.exitRoom() start");
 		Room room = user.getRoom();
-		if(room.exitRoom(user))
+		if(room != null && room.exitRoom(user)) {
+			System.out.println("[Log] * Room " + room.getRoomToken() + " deleted!");
+			roomIdTable.remove(room.getRoomToken());
 			rooms.remove(room);
-		users.remove(user);
-		ClientHandler.disconnect(user);
+		}
+		//users.remove(user);
+		//ClientHandler.disconnect(user);
 	}
 
 	public void betting(User user, int type) {
 		System.out.println("[Log] GameManager.betting() start");
 		Room room = user.getRoom();
 		room.betting(user, type);
-	 }
+	}
 	
 	public void dealing(User user) {
 		System.out.println("[Log] GameManager.dealing() start");
@@ -86,12 +97,7 @@ public class GameManager {
 	}
 
 	public void delUser(User user) {
-		System.out.println("[Log] GameManager.delUser() start");
-		Room room = user.getRoom();
-		if(room != null) {
-			if(room.exitRoom(user))
-				rooms.remove(room);
-		}
+		System.out.println("[Log] * GameManager.delUser() start");
 		users.remove(user);
 	}
 

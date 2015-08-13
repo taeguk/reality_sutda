@@ -44,11 +44,11 @@ public class Room {
 	private int selectionCnt;
 	private int selectionYesCnt;
 	
-	public Room(User maker, int roomSize) {
+	public Room(User maker, int roomSize, String roomToken) {
 		System.out.println("[Log] Room.Room() start");
 		++Room.roomCnt;
 		roomId = Room.nextId++;
-		roomToken = "test";		// will be changed.
+		this.roomToken = "test" + roomId;//roomToken;
 		this.status = WAITING;
 		this.roomSize = roomSize;
 		users = new User[roomSize];
@@ -92,7 +92,7 @@ public class Room {
 		}
 		
 		pivot = dealer = 0;
-		dealIdx = (dealer+1) % userCnt;
+		dealIdx = dealer;
 		dealCnt = 0;
 		dealFinished = false;
 		aliveCnt = userCnt;
@@ -120,7 +120,7 @@ public class Room {
 		
 		if(status == WAITING) {
 			if(userCnt == 0) {
-				isEmptyRoom = true;
+				;
 			} else {
 				ClientHandler.broadCastUpdateUserCnt(this);
 			}
@@ -133,14 +133,23 @@ public class Room {
 			ClientHandler.broadCastUserAction(user, this, Protocol.USER_ACTION_EXIT_ROOM);
 			
 			if(userCnt <= 1) {
-				finishGame();
-				
-				isEmptyRoom = true;
-				
+				winner = 0;
+				ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_WHO_WINS, null,0,null);
 			}
 		}
 		
-		ClientHandler.disconnect(user);
+		//ClientHandler.disconnect(user);
+		user.setStatus(User.EMPTY);
+		if(status == PLAYING && userCnt == 1) {
+			//GameServer.getInstance().getGameManager().exitRoom(users[0]);
+			users[0].setStatus(User.EMPTY);
+			--userCnt;
+			ClientHandler.sendQuitRoom(users[0]);
+		}
+		
+		if(userCnt == 0) {
+			isEmptyRoom = true;
+		}
 		
 		return isEmptyRoom;
 	}
@@ -148,6 +157,10 @@ public class Room {
 	public void replaySelection(User user, int selection) {
 		System.out.println("[Log] Room.replaySelection() start");
 		// validation check will be updated.
+		if(waitReplaySelection == false) {
+			System.out.println("[Log] replay selection ignored cuz invalid situation.");
+			return;
+		}
 		++selectionCnt;
 		if(selection == Protocol.REPLAY_SELECTION_YES) {
 			selectionTable[userMap.get(user).intValue()] = true;
@@ -160,7 +173,9 @@ public class Room {
 				if(selectionTable[i] == true) {
 					newUsers[idx++] = users[i];
 				} else {
-					ClientHandler.disconnect(users[i]);
+					//ClientHandler.disconnect(users[i]);
+					exitRoom(users[i]);
+					ClientHandler.sendQuitRoom(users[i]);
 				}
 			}
 			users = newUsers;
@@ -183,8 +198,10 @@ public class Room {
 		GameResultJudge grj = new GameResultJudge(aliveCnt, index);
 		grj.judge();
 		int gameResult = grj.getGameResult();
-		
+		System.out.println("[Log] * aliveCnt : " + aliveCnt);
 		if(gameResult == GameResultJudge.WHOWINS) {
+			System.out.println("[Log] * who wins! ");
+			System.out.println("[Log] * winnerIdx : " + grj.getWinnerIdx());
 			winner = table[grj.getWinnerIdx()];
 			ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_WHO_WINS, null,0,null);
 			// replaying processing
@@ -196,6 +213,7 @@ public class Room {
 			}
 			selectionYesCnt = selectionCnt = 0;
 		} else if(gameResult == GameResultJudge.DRAW) {
+			System.out.println("[Log] * draw! ");
 			ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_DRAW, table, grj.getDrawPlayerNum(), grj.getDrawPlayerIdx());
 			
 			status = PLAYING;
@@ -231,13 +249,18 @@ public class Room {
 			
 			ClientHandler.sendDealingCmd(users[dealer]);
 		} else {	// rematch
+			System.out.println("[Log] * rematch! ");
 			ClientHandler.broadCastGameResult(this, Protocol.GAME_RESULT_REMATCH, null,0,null);
 			gameStart();
 		}
 	}
 
-	public void dealing() {
+	public boolean dealing() {
 		System.out.println("[Log] Room.dealing() start");
+		if(dealFinished) {
+			System.out.println("[Log] Room.dealing() ignored cuz dealFinished.");
+			return false;
+		}
 		User user = users[(dealIdx = (dealIdx + 1) % userCnt)];
 		Card card = cards[dealCnt++];
 		user.receiveCard(card);
@@ -249,31 +272,40 @@ public class Room {
 			
 			startBetting();
 		}
+		return true;
 	}
 
 	private void startBetting() {
 		System.out.println("[Log] Room.startBetting() start");
-		pivot = dealer;
+		pivot = dealer-1;
 		turn = 0;
 		commandPivotBetting();
 	}
 	
 	public void commandPivotBetting() {
 		System.out.println("[Log] Room.commandPivotBetting() start");
-		ClientHandler.sendBettingCmd(users[pivot], true);
 		do {
 			pivot = (pivot + 1) % userCnt;
 		} while(users[pivot].isDead());
+		ClientHandler.sendBettingCmd(users[pivot], true);
 		++turn;
 		bettingCnt = 0;
 		needBettingCnt = aliveCnt;
-		// all users bettingType set None will be updated.
+
+		for(int i=0; i<userCnt; ++i) {
+			if(users[i].isDead()) continue;
+			users[i].setBettingType(User.NOTBETTING);
+		}
 	}
 
 	public void betting(User user, int type) {
 		System.out.println("[Log] Room.betting() start");
 		// type validation check will be updated.
-		// duplicate betting check will be updated.
+
+		if(user.getBettingType() != User.NOTBETTING) {
+			System.out.println("[Log] Room.betting() ignored cuz duplicate betting.");
+			return;
+		}
 		
 		user.betting(type);
 		if(checkPivotBettingType(type)) {
@@ -291,6 +323,7 @@ public class Room {
 				ClientHandler.broadCastUserAction(user, this, Protocol.USER_ACTION_DIE);
 				if(--aliveCnt <= 1) {
 					// game finished.
+					finishGame();
 				}
 			} else {
 				ClientHandler.broadCastUserAction(user, this, Protocol.USER_ACTION_BETTING);
@@ -347,7 +380,7 @@ public class Room {
 			waitCheckOpinion = false;
 			ClientHandler.broadCastCheckResult(this, opinionCnt == opinionYesCnt);
 			if(opinionCnt == opinionYesCnt) {
-				// game finished
+				finishGame();
 			} else {
 				commandPivotBetting();
 			}
